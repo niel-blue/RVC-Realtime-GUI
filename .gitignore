@@ -1,0 +1,24 @@
+# Packaged runtime and generated user state
+runtime/
+logs/
+recordings/
+configs/config.json
+configs/window.json
+models/*/
+!models/README.md
+
+# Inference assets and bundled binaries are distributed separately.
+assets/hubert_base/pytorch_model.bin
+assets/rmvpe/rmvpe.pt
+tools/ffmpeg/
+
+# Python-generated files
+__pycache__/
+*.py[cod]
+*.pyo
+.cache/
+
+# Local development files
+.vscode/
+.idea/
+*.log

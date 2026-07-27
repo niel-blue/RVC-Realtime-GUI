@@ -9,11 +9,7 @@ import torch.nn.functional as F
 from torchaudio.transforms import Resample
 
 from infer.hubert import extract_hubert_features, load_hubert_model
-from i18n.i18n import I18nAuto
 from tools.cuda_graph import run_cuda_graph
-
-
-i18n = I18nAuto()
 
 
 def printt(strr, *args):
@@ -84,7 +80,7 @@ class RVC:
             if index_rate != 0:
                 self.index = faiss.read_index(index_path)
                 self.big_npy = self.index.reconstruct_n(0, self.index.ntotal)
-                printt(i18n("已启用索引检索"))
+                printt("Index search enabled")
             self.pth_path = pth_path
             self.index_path = index_path
             self.index_rate = index_rate
@@ -142,7 +138,7 @@ class RVC:
         if new_index_rate != 0 and self.index_rate == 0:
             self.index = faiss.read_index(self.index_path)
             self.big_npy = self.index.reconstruct_n(0, self.index.ntotal)
-            printt(i18n("已启用索引检索"))
+            printt("Index search enabled")
         self.index_rate = new_index_rate
 
     def get_f0_post(self, f0):
@@ -191,7 +187,7 @@ class RVC:
         if hasattr(self, "model_rmvpe") == False:
             from infer.rmvpe import RMVPE
 
-            printt(i18n("正在加载RMVPE模型"))
+            printt("Loading RMVPE model")
             self.model_rmvpe = RMVPE(
                 "assets/rmvpe/rmvpe.pt",
                 is_half=self.is_half,
@@ -251,6 +247,17 @@ class RVC:
             if hasattr(self, "index") and self.index_rate != 0:
                 npy = feats[0][skip_head // 2 :].cpu().numpy().astype("float32")
                 score, ix = self.index.search(npy, k=8)
+                # IVF indexes created with nprobe=1 can return -1 when the
+                # single probed list is empty. That is a sparse search miss,
+                # not a corrupt or unsupported index file. Retry wider and
+                # retain the wider setting for following realtime blocks.
+                if (ix < 0).any() and hasattr(self.index, "nprobe"):
+                    nlist = int(getattr(self.index, "nlist", 0))
+                    current_nprobe = max(1, int(self.index.nprobe))
+                    retry_nprobe = min(max(current_nprobe * 4, 4), nlist or 4)
+                    if retry_nprobe > current_nprobe:
+                        self.index.nprobe = retry_nprobe
+                        score, ix = self.index.search(npy, k=8)
                 if (ix >= 0).all():
                     weight = np.square(1 / score)
                     weight /= weight.sum(axis=1, keepdims=True)
@@ -266,14 +273,14 @@ class RVC:
                     )
                 else:
                     printt(
-                        i18n("索引无效：必须使用added_xxxx.index，不能使用trained_xxxx.index")
+                        "Invalid index: use added_xxxx.index, not trained_xxxx.index"
                     )
             else:
                 if report_status:
-                    printt(i18n("索引检索失败或未启用"))
+                    printt("Index search failed or is disabled")
         except Exception:
             traceback.print_exc()
-            printt(i18n("索引检索失败"))
+            printt("Index search failed")
         t3 = ttime()
         p_len = input_wav.shape[0] // 160
         factor = pow(2, self.formant_shift / 12)
@@ -356,7 +363,7 @@ class RVC:
         t5 = ttime()
         if report_status:
             printt(
-                i18n("耗时：特征=%.3f秒，索引=%.3f秒，音高=%.3f秒，模型=%.3f秒"),
+                "Timing: features=%.3fs, index=%.3fs, pitch=%.3fs, model=%.3fs",
                 t2 - t1,
                 t3 - t2,
                 t4 - t3,

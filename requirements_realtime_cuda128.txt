@@ -1,0 +1,21 @@
+--extra-index-url https://download.pytorch.org/whl/cu128
+
+# CUDA 12.8 runtime
+torch==2.7.1+cu128
+torchaudio==2.7.1+cu128
+
+# Realtime inference and pitch extraction
+numpy==1.26.4
+scipy==1.17.1
+faiss-cpu==1.14.3
+librosa==0.10.2.post1
+praat-parselmouth==0.4.7
+soundfile==0.14.0
+transformers==4.49.0
+torchfcpe==0.0.4
+
+# Desktop GUI and audio I/O
+customtkinter==5.2.2
+Pillow
+sounddevice==0.5.5
+PyYAML==6.0.3

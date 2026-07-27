@@ -2,10 +2,7 @@ import argparse
 import os
 import re
 import sys
-import json
 from multiprocessing import cpu_count
-from pathlib import Path
-from tools.file_io import read_text
 
 import torch
 import logging
@@ -134,16 +131,6 @@ if infer_device.type != "cuda":
 CUDA_GRAPH_AVAILABLE = configure_cuda_graph(infer_device)
 
 
-CONFIGS_DIR = Path(__file__).resolve().parent
-MODEL_CONFIG_FILES = (
-    "v1/32k.json",
-    "v1/40k.json",
-    "v1/48k.json",
-    "v2/48k.json",
-    "v2/32k.json",
-)
-
-
 def singleton_variable(func):
     def wrapper(*args, **kwargs):
         if not wrapper.instance:
@@ -163,7 +150,6 @@ class Config:
         self.cuda_graph = CUDA_GRAPH_AVAILABLE
         self.n_cpu = 0
         self.gpu_name = None
-        self.json_config = self.load_config_json()
         self.gpu_mem = None
         (
             self.python_cmd,
@@ -178,13 +164,6 @@ class Config:
         self.instead = ""
         self.preprocess_per = 3.7
         self.x_pad, self.x_query, self.x_center, self.x_max = self.device_config()
-
-    @staticmethod
-    def load_config_json() :
-        d = {}
-        for config_file in MODEL_CONFIG_FILES:
-            d[config_file] = json.loads(read_text(CONFIGS_DIR / config_file))
-        return d
 
     @staticmethod
     def arg_parse() :
@@ -220,13 +199,13 @@ class Config:
         )
 
     def device_config(self) :
-        if infer_device.type == "cuda":
-            i_device = infer_device.index
-            self.device = str(infer_device)
-            self.dtype = infer_dtype
-            self.is_half = infer_dtype == torch.float16
+        active_device = torch.device(self.device)
+        if active_device.type == "cuda":
+            i_device = active_device.index
+            self.device = str(active_device)
             self.gpu_name = torch.cuda.get_device_name(i_device)
-            self.gpu_mem = int(infer_gpu_mem)
+            if self.gpu_mem is None:
+                self.gpu_mem = int(infer_gpu_mem)
             logger.info(
                 "Selected GPU %s (%s, SM %.1f, %.1f GiB)",
                 i_device,
@@ -284,3 +263,18 @@ class Config:
             % (self.is_half, self.device)
         )
         return x_pad, x_query, x_center, x_max
+
+    def select_cuda_device(self, index):
+        """Apply a compatible CUDA device to realtime inference."""
+        device, dtype, _, memory_gb = get_device_dtype_sm(int(index))
+        if device.type != "cuda":
+            raise ValueError(f"GPU {index} is not compatible with realtime inference")
+        torch.cuda.set_device(device)
+        self.device = str(device)
+        self.dtype = dtype
+        self.is_half = dtype == torch.float16
+        self.gpu_mem = int(memory_gb)
+        self.gpu_name = torch.cuda.get_device_name(device.index)
+        self.dml = False
+        self.instead = ""
+        self.x_pad, self.x_query, self.x_center, self.x_max = self.device_config()
