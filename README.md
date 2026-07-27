@@ -28,7 +28,7 @@ It is maintained as a focused derivative of
 
 ## Download
 
-**[Open the download page on Hugging Face](https://huggingface.co/niel-blue/RVC-Realtime-GUI)**
+**[Open the download page on Hugging Face]([https://huggingface.co/niel-blue/RVC-Realtime-GUI](https://huggingface.co/niel-blue/RVC-Realtime-GUI/tree/main))**
 
 | Build | Status | Intended hardware |
 | --- | --- | --- |
@@ -41,7 +41,7 @@ stack, FFmpeg, inference assets, and the release model set.
 ## Quick start
 
 1. Download and extract the matching package from the
-   [Hugging Face download page](https://huggingface.co/niel-blue/RVC-Realtime-GUI).
+   [Hugging Face download page]([https://huggingface.co/niel-blue/RVC-Realtime-GUI](https://huggingface.co/niel-blue/RVC-Realtime-GUI/tree/main).
 2. Extract it to a short local path, such as `C:\RVC-Realtime-GUI`.
    Do not run it from inside the archive.
 3. Start `RVC-Realtime-GUI-CUDA128.bat` for the CUDA 12.8 package.
