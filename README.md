@@ -1,5 +1,12 @@
 # RVC-Realtime-GUI
 
+> ## Latest high-performance real-time build
+>
+> **This project includes the real-time inference performance updates introduced
+> after 2026-07-18.** It combines the updated inference path, CUDA Graph
+> warm-up, and input/output noise-reduction fixes in a dedicated desktop client
+> for low-latency RVC voice conversion.
+
 <img width="1760" height="752" alt="RVC-Realtime-GUI screenshot" src="https://github.com/user-attachments/assets/d001d48b-9f00-4eeb-a90c-1474099e8454" />
 
 RVC-Realtime-GUI is a Windows desktop client for low-latency, real-time RVC
@@ -8,6 +15,14 @@ RVC-Realtime-GUI is a Windows desktop client for low-latency, real-time RVC
 This repository contains the source for the **CUDA 12.8 standard build**.
 It is maintained as a focused derivative of
 [RVC-Project/Retrieval-based-Voice-Conversion-WebUI](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI).
+
+## Performance-focused updates
+
+- **Updated real-time inference implementation** based on upstream changes
+  released after 2026-07-18
+- **CUDA Graph warm-up** to reduce steady-state GPU inference overhead
+- **Input/output noise-reduction fixes** from the updated real-time path
+- **CUDA 12.8 standard runtime**, including Blackwell-compatible environments
 
 ## Download
 
