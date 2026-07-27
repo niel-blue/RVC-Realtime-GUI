@@ -9,10 +9,17 @@ This repository contains the source for the **CUDA 12.8 standard build**.
 It is maintained as a focused derivative of
 [RVC-Project/Retrieval-based-Voice-Conversion-WebUI](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI).
 
-The ready-to-run package is distributed separately on
-[Hugging Face](https://huggingface.co/niel-blue/RVC-Realtime-GUI).
-It includes the bundled Python runtime, CUDA/PyTorch stack, FFmpeg, inference
-assets, and the release model set.
+## Download
+
+**[Open the download page on Hugging Face](https://huggingface.co/niel-blue/RVC-Realtime-GUI)**
+
+Download the package that matches your GPU:
+
+- **CUDA 12.8** — current standard build
+- **CUDA 11.8** — planned legacy build for older NVIDIA GPUs
+
+The downloadable package includes the bundled Python runtime, CUDA/PyTorch
+stack, FFmpeg, inference assets, and the release model set.
 
 ## Builds
 
