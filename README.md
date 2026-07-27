@@ -48,6 +48,37 @@ stack, FFmpeg, inference assets, and the release model set.
 Each build is distributed as a separate Hugging Face package so that its Python,
 PyTorch, and CUDA runtime remain self-contained.
 
+## Quick start
+
+1. Download and extract the matching package from the
+   [Hugging Face download page](https://huggingface.co/niel-blue/RVC-Realtime-GUI).
+2. Extract it to a short local path, such as `C:\RVC-Realtime-GUI`.
+   Do not run it from inside the archive.
+3. Start `RVC-Realtime-GUI-CUDA128.bat` for the CUDA 12.8 package.
+4. Select a model and audio devices, then press **Start**.
+
+The release package already contains Python, PyTorch/CUDA, FFmpeg, and the
+required inference assets. No separate Python, CUDA Toolkit, FFmpeg, or
+RVC-WebUI installation is required.
+
+## Adding models
+
+Create one folder per model inside `models` in the extracted release package:
+
+```text
+models/
+  MyVoice/
+    MyVoice.pth
+    added_MyVoice.index
+    preview.png
+```
+
+- The **folder name** is displayed as the model name.
+- Place the model `.pth` and its `added_*.index` file in the same folder.
+- An optional `.png`, `.jpg`, or `.jpeg` image is shown automatically as the
+  model preview.
+- Restart the app or use **Reload** after adding or replacing a model.
+
 ## Highlights
 
 - Dedicated CustomTkinter desktop interface with Japanese and English UI

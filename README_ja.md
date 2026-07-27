@@ -41,6 +41,32 @@ RVC-Realtime-GUI は、低遅延のリアルタイム RVC（Retrieval-based Voic
 
 各ビルドは Python、PyTorch、CUDA ランタイムを自己完結させるため、Hugging Face 上で別々の配布パッケージとして提供します。
 
+## クイックスタート
+
+1. [Hugging Face のダウンロードページ](https://huggingface.co/niel-blue/RVC-Realtime-GUI)から、使用する GPU に合ったパッケージをダウンロードして展開します。
+2. `C:\RVC-Realtime-GUI` など短いローカルパスへ展開してください。アーカイブ内から直接起動しないでください。
+3. CUDA 12.8 パッケージでは `RVC-Realtime-GUI-CUDA128.bat` を起動します。
+4. モデルとオーディオデバイスを選択し、**スタート**を押します。
+
+配布パッケージには Python、PyTorch／CUDA、FFmpeg、推論に必要なアセットを同梱しています。Python、CUDA Toolkit、FFmpeg、RVC-WebUI を別途インストールする必要はありません。
+
+## モデルの追加
+
+展開した配布パッケージの `models` 内に、モデルごとのフォルダを作成します。
+
+```text
+models/
+  MyVoice/
+    MyVoice.pth
+    added_MyVoice.index
+    preview.png
+```
+
+- **フォルダ名**がアプリ上のモデル名として表示されます。
+- モデル `.pth` と対応する `added_*.index` を同じフォルダに入れてください。
+- 任意の `.png`、`.jpg`、`.jpeg` 画像を入れると、モデルのプレビューとして自動表示します。
+- モデルを追加・差し替えた後は、アプリを再起動するか **再読み込み**を実行してください。
+
 ## 主な機能
 
 - 日本語・英語対応の CustomTkinter 専用デスクトップ UI
