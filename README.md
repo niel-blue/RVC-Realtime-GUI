@@ -1,5 +1,7 @@
 # RVC-Realtime-GUI
 
+[English](README.md) | [日本語](README_ja.md)
+
 > ## Latest high-performance real-time build
 >
 > **This project includes the real-time inference performance updates introduced
