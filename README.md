@@ -47,6 +47,10 @@ stack, FFmpeg, inference assets, and the release model set.
 3. Start `RVC-Realtime-GUI-CUDA128.bat` for the CUDA 12.8 package.
 4. Select a model and audio devices, then press **Start**.
 
+> **First launch may take longer than usual** while the bundled inference assets
+> and GPU runtime are initialized. Please wait for the application window to
+> finish opening before assuming it has stopped responding.
+
 ## Adding models
 
 Create one folder per model inside `models` in the extracted release package:
