@@ -1,3 +1,4 @@
+<img width="1760" height="752" alt="スクリーンショット" src="https://github.com/user-attachments/assets/d001d48b-9f00-4eeb-a90c-1474099e8454" />
 # RVC-Realtime-GUI
 
 RVC-Realtime-GUI is a Windows desktop client for low-latency, real-time RVC
