@@ -10,10 +10,9 @@ It is maintained as a focused derivative of
 [RVC-Project/Retrieval-based-Voice-Conversion-WebUI](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI).
 
 The ready-to-run package is distributed separately on
-[Hugging Face (planned distribution page)](https://huggingface.co/niel-blue/RVC-Realtime-GUI).
+[Hugging Face](https://huggingface.co/niel-blue/RVC-Realtime-GUI).
 It includes the bundled Python runtime, CUDA/PyTorch stack, FFmpeg, inference
-assets, and the release model set. The repository link is a placeholder until
-the first public upload.
+assets, and the release model set.
 
 ## Builds
 
