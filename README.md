@@ -30,23 +30,13 @@ It is maintained as a focused derivative of
 
 **[Open the download page on Hugging Face](https://huggingface.co/niel-blue/RVC-Realtime-GUI)**
 
-Download the package that matches your GPU:
-
-- **CUDA 12.8** — current standard build
-- **CUDA 11.8** — planned legacy build for older NVIDIA GPUs
-
-The downloadable package includes the bundled Python runtime, CUDA/PyTorch
-stack, FFmpeg, inference assets, and the release model set.
-
-## Builds
-
 | Build | Status | Intended hardware |
 | --- | --- | --- |
 | CUDA 12.8 | Current standard build | Current NVIDIA GPUs, including Blackwell-compatible environments |
 | CUDA 11.8 | Planned legacy build | Older NVIDIA GPUs that cannot use the CUDA 12.8 package |
 
-Each build is distributed as a separate Hugging Face package so that its Python,
-PyTorch, and CUDA runtime remain self-contained.
+Each package is self-contained and includes its Python runtime, PyTorch/CUDA
+stack, FFmpeg, inference assets, and the release model set.
 
 ## Quick start
 
@@ -56,10 +46,6 @@ PyTorch, and CUDA runtime remain self-contained.
    Do not run it from inside the archive.
 3. Start `RVC-Realtime-GUI-CUDA128.bat` for the CUDA 12.8 package.
 4. Select a model and audio devices, then press **Start**.
-
-The release package already contains Python, PyTorch/CUDA, FFmpeg, and the
-required inference assets. No separate Python, CUDA Toolkit, FFmpeg, or
-RVC-WebUI installation is required.
 
 ## Adding models
 

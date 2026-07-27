@@ -25,21 +25,12 @@ RVC-Realtime-GUI は、低遅延のリアルタイム RVC（Retrieval-based Voic
 
 **[Hugging Face のダウンロードページを開く](https://huggingface.co/niel-blue/RVC-Realtime-GUI)**
 
-使用する NVIDIA GPU に合ったパッケージをダウンロードしてください。
-
-- **CUDA 12.8**：現行の標準ビルド
-- **CUDA 11.8**：CUDA 12.8 パッケージを使用できない旧世代 NVIDIA GPU 向け（準備中）
-
-配布パッケージには、Python ランタイム、PyTorch／CUDA スタック、FFmpeg、推論用アセット、リリース用モデルセットを同梱しています。
-
-## ビルド一覧
-
 | ビルド | 状態 | 想定するハードウェア |
 | --- | --- | --- |
 | CUDA 12.8 | 現行標準ビルド | Blackwell 互換環境を含む現行 NVIDIA GPU |
 | CUDA 11.8 | 準備中のレガシービルド | CUDA 12.8 パッケージを使用できない旧世代 NVIDIA GPU |
 
-各ビルドは Python、PyTorch、CUDA ランタイムを自己完結させるため、Hugging Face 上で別々の配布パッケージとして提供します。
+各パッケージには Python ランタイム、PyTorch／CUDA スタック、FFmpeg、推論用アセット、リリース用モデルセットを同梱しています。Python、CUDA Toolkit、FFmpeg、RVC-WebUI を別途インストールする必要はありません。
 
 ## クイックスタート
 
@@ -47,8 +38,6 @@ RVC-Realtime-GUI は、低遅延のリアルタイム RVC（Retrieval-based Voic
 2. `C:\RVC-Realtime-GUI` など短いローカルパスへ展開してください。アーカイブ内から直接起動しないでください。
 3. CUDA 12.8 パッケージでは `RVC-Realtime-GUI-CUDA128.bat` を起動します。
 4. モデルとオーディオデバイスを選択し、**スタート**を押します。
-
-配布パッケージには Python、PyTorch／CUDA、FFmpeg、推論に必要なアセットを同梱しています。Python、CUDA Toolkit、FFmpeg、RVC-WebUI を別途インストールする必要はありません。
 
 ## モデルの追加
 
