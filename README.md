@@ -1,5 +1,6 @@
-<img width="1760" height="752" alt="スクリーンショット" src="https://github.com/user-attachments/assets/d001d48b-9f00-4eeb-a90c-1474099e8454" />
 # RVC-Realtime-GUI
+
+<img width="1760" height="752" alt="RVC-Realtime-GUI screenshot" src="https://github.com/user-attachments/assets/d001d48b-9f00-4eeb-a90c-1474099e8454" />
 
 RVC-Realtime-GUI is a Windows desktop client for low-latency, real-time RVC
 (Retrieval-based Voice Conversion).
@@ -10,10 +11,9 @@ It is maintained as a focused derivative of
 
 The ready-to-run package is distributed separately on
 [Hugging Face (planned distribution page)](https://huggingface.co/niel-blue/RVC-Realtime-GUI).
-It includes
-the bundled Python runtime, CUDA/PyTorch stack, FFmpeg, inference assets, and
-the release model set. The repository link is a placeholder until the first
-public upload.
+It includes the bundled Python runtime, CUDA/PyTorch stack, FFmpeg, inference
+assets, and the release model set. The repository link is a placeholder until
+the first public upload.
 
 ## Builds
 
