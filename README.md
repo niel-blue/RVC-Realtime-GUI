@@ -25,10 +25,13 @@ It is maintained as a focused derivative of
 - **CUDA Graph warm-up** to reduce steady-state GPU inference overhead
 - **Input/output noise-reduction fixes** from the updated real-time path
 - **CUDA 12.8 standard runtime**, including Blackwell-compatible environments
+- **Native ASIO buffer preservation**: opens ASIO with the driver's preferred
+  buffer size instead of allowing the high-latency default to select a larger
+  buffer
 
 ## Download
 
-**[Open the download page on Hugging Face]([https://huggingface.co/niel-blue/RVC-Realtime-GUI](https://huggingface.co/niel-blue/RVC-Realtime-GUI/tree/main))**
+**[Open the download page on Hugging Face](https://huggingface.co/niel-blue/RVC-Realtime-GUI)**
 
 | Build | Status | Intended hardware |
 | --- | --- | --- |
@@ -41,7 +44,7 @@ stack, FFmpeg, inference assets, and the release model set.
 ## Quick start
 
 1. Download and extract the matching package from the
-   [Hugging Face download page]([https://huggingface.co/niel-blue/RVC-Realtime-GUI](https://huggingface.co/niel-blue/RVC-Realtime-GUI/tree/main).
+   [Hugging Face download page](https://huggingface.co/niel-blue/RVC-Realtime-GUI).
 2. Extract it to a short local path, such as `C:\RVC-Realtime-GUI`.
    Do not run it from inside the archive.
 3. Start `RVC-Realtime-GUI-CUDA128.bat` for the CUDA 12.8 package.
