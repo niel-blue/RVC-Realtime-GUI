@@ -65,11 +65,18 @@ models/
 - CUDA 12.8 標準ビルドと現行 NVIDIA GPU 対応
 - CUDA Graph ウォームアップを備えたリアルタイム RVC 推論
 - WASAPI およびネイティブ ASIO のオーディオデバイスルーティング
-- 入力・出力・モニター用デバイスの個別選択
+- 入力・出力・モニター用デバイスの個別選択（入力・モニターにASIO、出力をwasapiなど可能）
 - モデルギャラリーとモデルごとの一般設定保存
 - WAV 録音：入力／出力の別ファイル、ミックス、L/R 分離録音
 - 同梱 FFmpeg を使った音声ファイル入力
 - ランタイムログの表示・ファイル保存
+
+## フリーモデル「Sakura」同梱
+<img width="150" height="150" alt="JK" src="https://github.com/user-attachments/assets/1537272e-eb9f-466c-8dae-9e8898cfccad" />
+
+その辺にいそうな普通の声がコンセプトの学習モデル「Sakura」を同梱。
+
+最新版RVCを使用しての学習時間は100epoch程度。商用利用はフリーです。
 
 ## ソース構成
 
