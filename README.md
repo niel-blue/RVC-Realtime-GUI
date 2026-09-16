@@ -36,7 +36,7 @@ It is maintained as a focused derivative of
 | Build | Status | Intended hardware |
 | --- | --- | --- |
 | CUDA 12.8 | Current standard build | Current NVIDIA GPUs, including Blackwell-compatible environments |
-| CUDA 11.8 | Planned legacy build | Older NVIDIA GPUs that cannot use the CUDA 12.8 package |
+| CUDA 11.8 | legacy build | Older NVIDIA GPUs that cannot use the CUDA 12.8 package |
 
 Each package is self-contained and includes its Python runtime, PyTorch/CUDA
 stack, FFmpeg, inference assets, and the release model set.
