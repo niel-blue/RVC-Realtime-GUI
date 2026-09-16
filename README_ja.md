@@ -29,7 +29,7 @@ RVC-Realtime-GUI は、低遅延のリアルタイム RVC（Retrieval-based Voic
 | ビルド | 状態 | 想定するハードウェア |
 | --- | --- | --- |
 | CUDA 12.8 | 現行標準ビルド | Blackwell 互換環境を含む現行 NVIDIA GPU |
-| CUDA 11.8 | 準備中のレガシービルド | CUDA 12.8 パッケージを使用できない旧世代 NVIDIA GPU |
+| CUDA 11.8 | レガシービルド | CUDA 12.8 パッケージを使用できない旧世代 NVIDIA GPU |
 
 各パッケージには Python ランタイム、PyTorch／CUDA スタック、FFmpeg、推論用アセット、リリース用モデルセットを同梱しています。Python、CUDA Toolkit、FFmpeg、RVC-WebUI を別途インストールする必要はありません。
 
