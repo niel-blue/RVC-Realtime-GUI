@@ -80,13 +80,13 @@ models/
 - 同梱 FFmpeg を使った音声ファイル入力
 - ランタイムログの表示・ファイル保存
 
-## ソース構成
-
 ## 同梱モデル「Sakura」
 
 <img width="150" height="150" alt="Sakura" src="https://github.com/user-attachments/assets/1537272e-eb9f-466c-8dae-9e8898cfccad" />
 
 普通の自然な声をコンセプトとしたモデル「Sakura」を同梱します。最新版RVCで約100epoch学習し、商用利用は自由です。
+
+## ソース構成
 
 | パス | 用途 |
 | --- | --- |

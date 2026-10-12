@@ -91,13 +91,13 @@ models/
 - Audio-file input through bundled FFmpeg in the packaged release
 - Runtime-log display and log-file export
 
-## Source layout
-
 ## Included model: Sakura
 
 <img width="150" height="150" alt="Sakura" src="https://github.com/user-attachments/assets/1537272e-eb9f-466c-8dae-9e8898cfccad" />
 
 Sakura is included as a natural, everyday voice model, trained for approximately 100 epochs with the updated RVC. Commercial use is permitted.
+
+## Source layout
 
 | Path | Purpose |
 | --- | --- |
