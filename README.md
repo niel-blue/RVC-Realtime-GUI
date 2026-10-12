@@ -10,12 +10,12 @@
 
 アプリケーション入力はWindowsのプロセス別音声取り込みを使用します。ASIO直接再生など通常のWindows再生経路を通らない音は対象外になる場合があります。原音は自動でミュートしません。実機での変換・聴取確認は継続中です。
 
+<img width="1760" height="752" alt="627249889-d001d48b-9f00-4eeb-a90c-1474099e8454" src="https://github.com/user-attachments/assets/3ba8d09c-ca3d-4810-a75b-e8f5e3bbfe48" />
+
 > ## 最新の高速リアルタイム推論ビルド
 >
 > **本プロジェクトには、2026-07-18 以降に導入されたリアルタイム推論の高速化対応を取り込んでいます。**
 > 更新済みの推論経路、CUDA Graph のウォームアップ、入出力ノイズ低減の修正を、低遅延 RVC 音声変換向けの専用デスクトップクライアントとしてまとめています。
-
-<img width="1760" height="752" alt="RVC-Realtime-GUI screenshot" src="https://github.com/user-attachments/assets/d001d48b-9f00-4eeb-a90c-1474099e8454" />
 
 RVC-Realtime-GUI は、低遅延のリアルタイム RVC（Retrieval-based Voice Conversion）を行う Windows デスクトップクライアントです。
 
