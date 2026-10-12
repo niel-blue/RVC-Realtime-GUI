@@ -1,4 +1,5 @@
 import traceback
+from pathlib import Path
 from time import time as ttime
 import faiss
 import numpy as np
@@ -10,6 +11,8 @@ from torchaudio.transforms import Resample
 
 from infer.hubert import extract_hubert_features, load_hubert_model
 from tools.cuda_graph import run_cuda_graph
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 
 def printt(strr, *args):
@@ -189,7 +192,7 @@ class RVC:
 
             printt("Loading RMVPE model")
             self.model_rmvpe = RMVPE(
-                "assets/rmvpe/rmvpe.pt",
+                str(PROJECT_ROOT / "assets" / "rmvpe" / "rmvpe.pt"),
                 is_half=self.is_half,
                 device=self.device,
             )

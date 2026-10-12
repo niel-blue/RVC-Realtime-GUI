@@ -161,6 +161,7 @@ def ui_text(key):
 MONITOR_DISABLED = ui_text("monitor_disabled")
 INPUT_SOURCE_MICROPHONE = "マイク／音声デバイス" if IS_JAPANESE_UI else "Microphone / audio device"
 INPUT_SOURCE_FILE = "音声ファイル" if IS_JAPANESE_UI else "Audio file"
+INPUT_SOURCE_APPLICATION = "アプリケーション入力" if IS_JAPANESE_UI else "Application input"
 FILE_UI_TEXT = {
     "browse": "参照" if IS_JAPANESE_UI else "Browse",
     "play": "▶",
@@ -297,6 +298,7 @@ if __name__ == "__main__":
     from tools.audio_fifo import AudioFrameFifo
     from tools.cuda_graph import cuda_graph_enabled, run_cuda_graph
     from tools.file_audio_source import FileAudioSource
+    from tools.application_source import ApplicationSource
     from tools.wav_recorder import WavRecorder
 
 
@@ -382,6 +384,11 @@ if __name__ == "__main__":
             self.file_input_path = ""
             self.file_input_volume = 1.0
             self.file_source_active = False
+            self.application_source_active = False
+            self.application_source = None
+            self.application_choices = {}
+            self.application_history = {}
+            self.selected_application = ''
             self.pending_model_settings_name = None
             self.model_settings_save_due = 0.0
             self.ffmpeg_path = os.path.join(now_dir, "tools", "ffmpeg", "ffmpeg.exe")
@@ -399,7 +406,6 @@ if __name__ == "__main__":
                 if IS_JAPANESE_UI
                 else "Checking audio devices…"
             )
-            self.update_devices(show_legacy=False)
             self.abort_startup_if_requested()
             self.launcher()
 
@@ -446,6 +452,33 @@ if __name__ == "__main__":
             )
             prefix = "モデル" if IS_JAPANESE_UI else "Model"
             return f"{prefix}: {model.model_path.name} / Index: {index_name}"
+
+        def default_recording_folder(self):
+            return os.path.abspath(os.path.join(now_dir, "recordings"))
+
+        def resolve_recording_folder(self, value):
+            """Keep the packaged default portable; retain user-selected folders."""
+            default_folder = self.default_recording_folder()
+            if not value or value == "recordings":
+                return default_folder
+            candidate = os.path.abspath(os.path.expanduser(str(value)))
+            if os.path.normcase(candidate) == os.path.normcase(default_folder):
+                return default_folder
+            parent = os.path.basename(os.path.dirname(candidate)).lower()
+            if (
+                os.path.basename(candidate).lower() == "recordings"
+                and parent.startswith("rvc-realtime-gui")
+            ):
+                return default_folder
+            return candidate
+
+        def recording_folder_config_value(self, folder=None):
+            folder = self.resolve_recording_folder(
+                self.recording_folder if folder is None else folder
+            )
+            if os.path.normcase(folder) == os.path.normcase(self.default_recording_folder()):
+                return "recordings"
+            return folder
 
         def model_general_settings_path(self, model_name):
             model = self.models_by_name.get(model_name)
@@ -612,7 +645,7 @@ if __name__ == "__main__":
                 size=(AUDIO_DEVICES_WIDTH, AUDIO_DEVICES_HEIGHT_FILE if active else AUDIO_DEVICES_HEIGHT_MIC)
             )
             self.window["sg_input_device"].widget.configure(
-                state="disabled" if active else "normal"
+                state="disabled" if active or self.application_source_active else "normal"
             )
             self.resize_main_window()
 
@@ -631,6 +664,25 @@ if __name__ == "__main__":
                 sg.popup_error(str(error))
             self.window["file_position"].update(self.format_file_time(source.position))
             self.window["file_seek"].update(value=source.position)
+
+        def refresh_applications(self):
+            if self.application_source is None:
+                self.application_source = ApplicationSource()
+            applications = self.application_source.enumerate()
+            for pid, identity, name in applications:
+                self.application_history[identity] = name
+            live = {identity: int(pid) for pid, identity, name in applications}
+            self.application_choices = {}
+            for identity, name in sorted(self.application_history.items(), key=lambda x: x[1].lower()):
+                suffix = (' (停止中)' if IS_JAPANESE_UI else ' (not running)') if identity not in live else ''
+                label = name + suffix + ' [' + identity + ']'
+                self.application_choices[label] = (identity, live.get(identity) or self.application_source.resolve(identity))
+            labels = list(self.application_choices)
+            selected = next((label for label, item in self.application_choices.items() if item[0] == self.selected_application), labels[0] if labels else '')
+            self.window['application_choice'].update(values=labels, value=selected)
+            if selected:
+                self.selected_application = self.application_choices[selected][0]
+            self.save_config_updates({'application_history': self.application_history, 'selected_application': self.selected_application})
 
         def choose_file_input(self):
             initial_dir = os.path.dirname(self.file_input_path) if self.file_input_path else now_dir
@@ -783,7 +835,10 @@ if __name__ == "__main__":
                         )
                     ),
                 )
-                self.update_devices(show_legacy=False)
+                self.gui_config.show_legacy_devices = bool(
+                    data.get("sg_show_legacy_devices", False)
+                )
+                self.update_devices(show_legacy=self.gui_config.show_legacy_devices)
                 old_api = data.get("sg_hostapi", "")
                 data["sg_input_device"] = self.normalize_device_choice(
                     data.get("sg_input_device", ""), "input", old_api
@@ -912,9 +967,13 @@ if __name__ == "__main__":
             if data.get("input_source") not in (
                 INPUT_SOURCE_MICROPHONE,
                 INPUT_SOURCE_FILE,
+                INPUT_SOURCE_APPLICATION,
             ):
                 data["input_source"] = INPUT_SOURCE_MICROPHONE
             self.file_source_active = data["input_source"] == INPUT_SOURCE_FILE
+            self.application_source_active = data['input_source'] == INPUT_SOURCE_APPLICATION
+            self.application_history = data.get('application_history', {})
+            self.selected_application = data.get('selected_application', '')
             # Audio-file paths are deliberately session-only.  They can be
             # moved or removed between launches and must never be restored.
             data.pop("file_input_path", None)
@@ -1027,7 +1086,7 @@ if __name__ == "__main__":
                                     size=audio_device_label_size,
                                 ),
                                 sg.Combo(
-                                    [INPUT_SOURCE_MICROPHONE, INPUT_SOURCE_FILE],
+                                    [INPUT_SOURCE_MICROPHONE, INPUT_SOURCE_FILE, INPUT_SOURCE_APPLICATION],
                                     key="input_source",
                                     default_value=data["input_source"],
                                     readonly=True,
@@ -1060,7 +1119,12 @@ if __name__ == "__main__":
                                     default_value=data.get("sg_input_device", ""),
                                     enable_events=True,
                                     size=DEVICE_COMBO_SIZE,
+                                    visible=not self.application_source_active,
                                 ),
+                                sg.Combo([], key='application_choice', readonly=True, enable_events=True,
+                                         size=(25, 1), visible=self.application_source_active),
+                                sg.Button('更新' if IS_JAPANESE_UI else 'Refresh', key='refresh_applications',
+                                          button_style='small', width=64, visible=self.application_source_active),
                                 sg.LevelMeter(
                                     key="input_level_meter",
                                     size=DEVICE_LEVEL_METER_SIZE,
@@ -1112,12 +1176,11 @@ if __name__ == "__main__":
                             [
                                 sg.Text(ui_text("active_rate")),
                                 sg.Text("-- Hz", key="sr_stream"),
-                                sg.Text("", size=(2, 1)),
                                 sg.Checkbox(
                                     (
-                                        "WASAPI排他モード（対応デバイスのみ）"
+                                        "WASAPI排他モード"
                                         if IS_JAPANESE_UI
-                                        else "WASAPI exclusive mode (supported devices only)"
+                                        else "WASAPI exclusive"
                                     ),
                                     key="sg_wasapi_exclusive",
                                     default=data.get(
@@ -1128,6 +1191,23 @@ if __name__ == "__main__":
                                         "対応しているWASAPI端点を排他モードで開きます"
                                         if IS_JAPANESE_UI
                                         else "Open supported WASAPI endpoints in exclusive mode"
+                                    ),
+                                ),
+                                sg.Checkbox(
+                                    (
+                                        "互換デバイス表示"
+                                        if IS_JAPANESE_UI
+                                        else "Compat."
+                                    ),
+                                    key="sg_show_legacy_devices",
+                                    default=data.get(
+                                        "sg_show_legacy_devices", False
+                                    ),
+                                    enable_events=True,
+                                    tooltip=(
+                                        "MME / DirectSound互換デバイスを一覧に追加します"
+                                        if IS_JAPANESE_UI
+                                        else "Add MME and DirectSound compatibility devices"
                                     ),
                                 ),
                             ],
@@ -1384,10 +1464,20 @@ if __name__ == "__main__":
                 selected=data.get("model_name", ""),
             )
             self.startup_screen = None
-            self.recording_folder = data.get("recording_folder", self.recording_folder)
+            saved_recording_folder = data.get("recording_folder")
+            self.recording_folder = self.resolve_recording_folder(saved_recording_folder)
+            if saved_recording_folder != self.recording_folder_config_value():
+                self.save_config_updates(
+                    {"recording_folder": self.recording_folder_config_value()}
+                )
             self.log_visible = False
             self.model_gallery_visible = False
             self.update_file_input_ui(self.file_source_active)
+            self.window['sg_input_device'].update(visible=not self.application_source_active)
+            self.window['application_choice'].update(visible=self.application_source_active)
+            self.window['refresh_applications'].update(visible=self.application_source_active)
+            if self.application_source_active:
+                self.window['input_device_label'].update('アプリケーション' if IS_JAPANESE_UI else 'Application')
             if data.get("model_selector_mode") == "list":
                 self.model_gallery_visible = True
             self.window["runtime_log_frame"].update(visible=False)
@@ -1404,6 +1494,11 @@ if __name__ == "__main__":
             self.window.update_header_button("toggle_theme", self.theme_button_text())
             self.restore_window_position()
             self.configure_audio_ui(data)
+            if self.application_source_active:
+                try:
+                    self.refresh_applications()
+                except Exception as error:
+                    sg.popup_error(str(error))
             self.log_startup_diagnostics(data)
             self.event_handler()
 
@@ -1431,13 +1526,14 @@ if __name__ == "__main__":
             if not hasattr(self, "window"):
                 return
             controls_locked = bool(flag_vc)
+            self.window['application_choice'].widget.configure(state='disabled' if controls_locked else 'readonly')
             self.window["input_source"].widget.configure(
                 state="disabled" if controls_locked else "readonly"
             )
             self.window["sg_input_device"].widget.configure(
                 state=(
                     "disabled"
-                    if controls_locked or self.file_source_active
+                    if controls_locked or self.file_source_active or self.application_source_active
                     else "normal"
                 )
             )
@@ -1666,6 +1762,11 @@ if __name__ == "__main__":
                 data = json.loads(read_text(realtime_config_path))
             except Exception:
                 data = {}
+            updates = dict(updates)
+            if "recording_folder" in updates:
+                updates["recording_folder"] = self.recording_folder_config_value(
+                    updates["recording_folder"]
+                )
             data.update(updates)
             # GENERAL SETTINGS are stored beside each model.  Drop legacy
             # global copies whenever the shared UI configuration is updated.
@@ -1776,7 +1877,7 @@ if __name__ == "__main__":
                         # treated every valid file conversion as an unexpected
                         # stop on the next GUI timer tick.
                         file_output_active = (
-                            self.file_source_active
+                            (self.file_source_active or self.application_source_active)
                             and self.output_stream is not None
                             and bool(getattr(self.output_stream, "active", False))
                         )
@@ -1787,6 +1888,11 @@ if __name__ == "__main__":
                             )
                             self.stop_stream()
                     self.refresh_file_playback_ui()
+                    if self.application_source is not None and self.application_source.error:
+                        error = self.application_source.error
+                        self.application_source.error = None
+                        self.stop_stream()
+                        self.set_run_status('Application input stopped: ' + error)
                     continue
                 if event == sg.WINDOW_CLOSED:
                     self.flush_model_general_settings_save(force=True)
@@ -1825,6 +1931,11 @@ if __name__ == "__main__":
                     continue
                 if event == "input_source":
                     self.stop_stream()
+                    self.application_source_active = values.get('input_source') == INPUT_SOURCE_APPLICATION
+                    self.window['sg_input_device'].update(visible=not self.application_source_active)
+                    self.window['application_choice'].update(visible=self.application_source_active)
+                    self.window['refresh_applications'].update(visible=self.application_source_active)
+                    self.window['input_device_label'].update(('アプリケーション' if IS_JAPANESE_UI else 'Application') if self.application_source_active else ui_text('input_device'))
                     self.update_file_input_ui(
                         values.get("input_source") == INPUT_SOURCE_FILE
                     )
@@ -1832,6 +1943,21 @@ if __name__ == "__main__":
                     self.save_config_updates(
                         {"input_source": values.get("input_source", INPUT_SOURCE_MICROPHONE)}
                     )
+                    if self.application_source_active:
+                        try:
+                            self.refresh_applications()
+                        except Exception as error:
+                            sg.popup_error(str(error))
+                    continue
+                if event == 'refresh_applications':
+                    try:
+                        self.refresh_applications()
+                    except Exception as error:
+                        sg.popup_error(str(error))
+                    continue
+                if event == 'application_choice':
+                    self.selected_application = self.application_choices[values[event]][0]
+                    self.save_config_updates({'selected_application': self.selected_application})
                     continue
                 if event == "browse_audio_file":
                     self.choose_file_input()
@@ -1872,6 +1998,7 @@ if __name__ == "__main__":
                     "sg_input_device",
                     "sg_output_device",
                     "sg_monitor_device",
+                    "sg_show_legacy_devices",
                 ):
                     self.stop_stream()
                     self.gui_config.sg_input_device = values.get(
@@ -1883,8 +2010,23 @@ if __name__ == "__main__":
                     self.gui_config.sg_monitor_device = values.get(
                         "sg_monitor_device", MONITOR_DISABLED
                     )
+                    if event == "sg_show_legacy_devices":
+                        self.gui_config.show_legacy_devices = bool(
+                            values.get("sg_show_legacy_devices", False)
+                        )
                     if event == "reload_devices":
-                        self.update_devices(show_legacy=False)
+                        self.update_devices(
+                            show_legacy=self.gui_config.show_legacy_devices
+                        )
+                    elif event == "sg_show_legacy_devices":
+                        self.update_devices(
+                            show_legacy=self.gui_config.show_legacy_devices
+                        )
+                        self.save_config_updates(
+                            {
+                                "sg_show_legacy_devices": self.gui_config.show_legacy_devices
+                            }
+                        )
                     if (
                         self.gui_config.sg_input_device not in self.input_devices
                         and len(self.input_devices) > 0
@@ -1991,7 +2133,9 @@ if __name__ == "__main__":
                     if flag_vc:
                         settings = {
                             "model_name": values["model_name"],
-                            "recording_folder": self.recording_folder,
+                            "application_history": self.application_history,
+                            "selected_application": self.selected_application,
+                            "recording_folder": self.recording_folder_config_value(),
                             "recording_mode": values.get(
                                 "recording_mode", ui_text("recording_separate")
                             ),
@@ -2001,7 +2145,9 @@ if __name__ == "__main__":
                             "theme_mode": self.theme_mode,
                             "gpu_device": values["gpu_device"],
                             "sg_wasapi_exclusive": values["sg_wasapi_exclusive"],
-                            "sg_show_legacy_devices": False,
+                            "sg_show_legacy_devices": bool(
+                                values.get("sg_show_legacy_devices", False)
+                            ),
                             "sg_input_device": values["sg_input_device"],
                             "sg_output_device": values["sg_output_device"],
                             "sg_monitor_device": values["sg_monitor_device"],
@@ -2094,6 +2240,7 @@ if __name__ == "__main__":
                     self.schedule_model_general_settings_save()
 
         def set_values(self, values):
+            self.application_source_active = values.get('input_source') == INPUT_SOURCE_APPLICATION
             # Use the actual control value at start time.  This also keeps
             # startup robust if the source-selection event is still queued.
             self.file_source_active = (
@@ -2162,7 +2309,9 @@ if __name__ == "__main__":
             self.gui_config.sg_wasapi_exclusive = bool(
                 values["sg_wasapi_exclusive"]
             )
-            self.gui_config.show_legacy_devices = False
+            self.gui_config.show_legacy_devices = bool(
+                values.get("sg_show_legacy_devices", False)
+            )
             self.gui_config.sg_input_device = values["sg_input_device"]
             self.gui_config.sg_output_device = values["sg_output_device"]
             self.gui_config.sg_monitor_device = values["sg_monitor_device"]
@@ -2215,7 +2364,7 @@ if __name__ == "__main__":
             # Do not inherit a disabled or ASIO input endpoint's channel
             # layout when the input source is a file.
             self.gui_config.channels = (
-                1 if self.file_source_active else self.get_device_channels()
+                1 if self.file_source_active or self.application_source_active else self.get_device_channels()
             )
             self.gui_config.output_channels = self.get_output_channels()
             self.gui_config.samplerate = self.get_automatic_samplerate(
@@ -2386,6 +2535,70 @@ if __name__ == "__main__":
                 self.rvc.cache_pitch.zero_()
                 self.rvc.cache_pitchf.zero_()
 
+        def get_asio_preferred_blocksize(self, device_index):
+            """Return the ASIO driver's configured/preferred buffer size.
+
+            PortAudio otherwise derives the ASIO host buffer from both the
+            requested callback size and latency.  On some native drivers that
+            negotiation can replace a user's 64-frame control-panel setting
+            with the driver's maximum (for example 4096 frames).  Querying the
+            ASIO value first and passing it explicitly keeps the RVC chunk size
+            independent from the hardware buffer size.
+            """
+            device_index = int(device_index)
+            blocksize = 0
+            try:
+                import ctypes
+
+                portaudio = ctypes.WinDLL(sd._libname)
+                query_sizes = portaudio.PaAsio_GetAvailableBufferSizes
+                query_sizes.argtypes = [
+                    ctypes.c_int,
+                    ctypes.POINTER(ctypes.c_long),
+                    ctypes.POINTER(ctypes.c_long),
+                    ctypes.POINTER(ctypes.c_long),
+                    ctypes.POINTER(ctypes.c_long),
+                ]
+                query_sizes.restype = ctypes.c_int
+                minimum = ctypes.c_long()
+                maximum = ctypes.c_long()
+                preferred = ctypes.c_long()
+                granularity = ctypes.c_long()
+                error = query_sizes(
+                    device_index,
+                    ctypes.byref(minimum),
+                    ctypes.byref(maximum),
+                    ctypes.byref(preferred),
+                    ctypes.byref(granularity),
+                )
+                if error == 0 and preferred.value > 0:
+                    blocksize = int(preferred.value)
+                    printt(
+                        "ASIO buffer: device=%s preferred=%d frames "
+                        "(min=%d max=%d granularity=%d)",
+                        sd.query_devices(device_index)["name"],
+                        blocksize,
+                        minimum.value,
+                        maximum.value,
+                        granularity.value,
+                    )
+                else:
+                    printt(
+                        "ASIO buffer query failed for device %d (error=%d); "
+                        "using PortAudio automatic selection",
+                        device_index,
+                        error,
+                    )
+            except Exception as error:
+                printt(
+                    "ASIO buffer query unavailable for device %d; "
+                    "using PortAudio automatic selection: %s",
+                    device_index,
+                    error,
+                )
+
+            return blocksize
+
         def start_stream(self):
             global flag_vc
             if not flag_vc:
@@ -2393,6 +2606,14 @@ if __name__ == "__main__":
                 self.log_active_audio_route()
                 if self.file_source_active:
                     self.start_file_stream()
+                    return
+                if self.application_source_active:
+                    self.refresh_applications()
+                    pid = next((item[1] for item in self.application_choices.values() if item[0] == self.selected_application), None)
+                    if not pid:
+                        raise ValueError('Selected application is not available. Open it and refresh the list.')
+                    self.start_file_stream()
+                    self.application_source.start(pid, self.gui_config.samplerate, self.block_frame, self.audio_callback, self.selected_application)
                     return
                 if self.gui_config.sg_input_hostapi == "ASIO":
                     self.start_asio_input_route()
@@ -2428,7 +2649,7 @@ if __name__ == "__main__":
                 self.output_stream = sd.OutputStream(
                     callback=self.output_audio_callback,
                     blocksize=(
-                        0
+                        self.get_asio_preferred_blocksize(sd.default.device[1])
                         if self.gui_config.sg_output_hostapi == "ASIO"
                         else self.block_frame
                     ),
@@ -2436,6 +2657,11 @@ if __name__ == "__main__":
                     channels=output_channels,
                     device=sd.default.device[1],
                     dtype="float32",
+                    latency=(
+                        0.0
+                        if self.gui_config.sg_output_hostapi == "ASIO"
+                        else None
+                    ),
                     extra_settings=output_extra,
                 )
                 self.input_stream = sd.InputStream(
@@ -2477,16 +2703,28 @@ if __name__ == "__main__":
             )
             self.output_stream = sd.OutputStream(
                 callback=self.output_audio_callback,
-                blocksize=0 if self.gui_config.sg_output_hostapi == "ASIO" else self.block_frame,
+                blocksize=(
+                    self.get_asio_preferred_blocksize(sd.default.device[1])
+                    if self.gui_config.sg_output_hostapi == "ASIO"
+                    else self.block_frame
+                ),
                 samplerate=self.gui_config.samplerate,
                 channels=output_channels,
                 device=sd.default.device[1],
                 dtype="float32",
+                latency=(
+                    0.0
+                    if self.gui_config.sg_output_hostapi == "ASIO"
+                    else None
+                ),
                 extra_settings=output_extra,
             )
             self.output_stream.start()
             self.stream = self.output_stream
-            if self.gui_config.sg_monitor_hostapi != "ASIO":
+            if not (
+                self.gui_config.sg_output_hostapi == "ASIO"
+                and self.gui_config.sg_monitor_hostapi == "ASIO"
+            ):
                 self.start_monitor_stream()
 
         def start_asio_input_route(self):
@@ -2571,11 +2809,12 @@ if __name__ == "__main__":
             if output_selectors:
                 self.input_stream = sd.Stream(
                     callback=self.asio_fifo_duplex_callback,
-                    blocksize=0,
+                    blocksize=self.get_asio_preferred_blocksize(input_device),
                     samplerate=self.gui_config.samplerate,
                     channels=(len(self.asio_input_selectors), len(output_selectors)),
                     device=(input_device, input_device),
                     dtype="float32",
+                    latency=0.0,
                     extra_settings=(
                         sd.AsioSettings(
                             channel_selectors=self.asio_input_selectors
@@ -2586,11 +2825,12 @@ if __name__ == "__main__":
             else:
                 self.input_stream = sd.InputStream(
                     callback=self.asio_fifo_input_callback,
-                    blocksize=0,
+                    blocksize=self.get_asio_preferred_blocksize(input_device),
                     samplerate=self.gui_config.samplerate,
                     channels=len(self.asio_input_selectors),
                     device=input_device,
                     dtype="float32",
+                    latency=0.0,
                     extra_settings=sd.AsioSettings(
                         channel_selectors=self.asio_input_selectors
                     ),
@@ -2624,7 +2864,14 @@ if __name__ == "__main__":
 
         def asio_fifo_duplex_callback(self, indata, outdata, frames, times, status):
             outdata.fill(0)
-            main = self.read_audio_target(self.output_queue, frames)
+            # When the main output uses WASAPI, this ASIO duplex stream exists
+            # only for the ASIO monitor path.  Do not consume the main output
+            # FIFO here; it belongs exclusively to output_audio_callback.
+            main = (
+                self.read_audio_target(self.output_queue, frames)
+                if self.asio_duplex_main_channels
+                else None
+            )
             monitor = self.read_audio_target(self.monitor_queue, frames)
             main_channels = self.asio_duplex_main_channels
             monitor_channels = self.asio_duplex_monitor_channels
@@ -2635,13 +2882,17 @@ if __name__ == "__main__":
                 outdata[: monitor.shape[0], start : start + monitor_channels] = (
                     monitor[:, :1]
                 )
-            # Record the block that is actually delivered to the output driver,
-            # not the earlier inference result.  That keeps its real buffering
-            # delay relative to the input timeline.
-            if main is None:
-                self.recorder.enqueue("output", np.zeros(frames, dtype=np.float32))
-            else:
-                self.recorder.enqueue("output", main[:, 0])
+            # Record from this callback only when ASIO is the main output.
+            # For mixed ASIO-input/WASAPI-output routing, output_audio_callback
+            # is the sole owner of output recording and preserves the WASAPI
+            # device timeline without competing for output_queue.
+            if main_channels:
+                if main is None:
+                    self.recorder.enqueue(
+                        "output", np.zeros(frames, dtype=np.float32)
+                    )
+                else:
+                    self.recorder.enqueue("output", main[:, 0])
             self.asio_input_fifo.write(indata)
             self.asio_worker_wakeup.set()
 
@@ -2702,7 +2953,9 @@ if __name__ == "__main__":
 
             try:
                 monitor_extra = (
-                    self.monitor_wasapi_settings
+                    sd.AsioSettings(channel_selectors=self.asio_monitor_selectors)
+                    if self.gui_config.sg_monitor_hostapi == "ASIO"
+                    else self.monitor_wasapi_settings
                     if (
                         "WASAPI" in self.gui_config.sg_monitor_hostapi
                         and self.gui_config.sg_wasapi_exclusive
@@ -2710,7 +2963,7 @@ if __name__ == "__main__":
                     else None
                 )
                 device_info = sd.query_devices(self.monitor_device_index)
-                self.monitor_channels = min(
+                self.monitor_channels = len(self.asio_monitor_selectors) if self.gui_config.sg_monitor_hostapi == "ASIO" else min(
                     int(device_info["max_output_channels"]),
                     2,
                 )
@@ -2727,7 +2980,8 @@ if __name__ == "__main__":
                 self.monitor_stream = sd.OutputStream(
                     device=self.monitor_device_index,
                     callback=self.monitor_audio_callback,
-                    blocksize=0,
+                    blocksize=(self.get_asio_preferred_blocksize(self.monitor_device_index)
+                               if self.gui_config.sg_monitor_hostapi == "ASIO" else 0),
                     samplerate=self.gui_config.samplerate,
                     channels=self.monitor_channels,
                     dtype="float32",
@@ -2757,6 +3011,8 @@ if __name__ == "__main__":
         def stop_stream(self):
             global flag_vc
             flag_vc = False
+            if self.application_source is not None:
+                self.application_source.stop()
             self.stop_file_playback()
             if self.recorder.active:
                 self.set_recording(False)
@@ -3024,7 +3280,12 @@ if __name__ == "__main__":
                 if direction == "input":
                     return f"[Voicemeeter] {device_name} → RVC入力"
                 return f"[Voicemeeter] {device_name} ← RVC出力"
-            api_label = "WASAPI" if api_name == "Windows WASAPI" else api_name
+            if api_name == "Windows WASAPI":
+                api_label = "WASAPI"
+            elif api_name == "Windows DirectSound":
+                api_label = "DirectSound"
+            else:
+                api_label = api_name
             return f"[{api_label}] {device_name}"
 
         @staticmethod
@@ -3082,9 +3343,14 @@ if __name__ == "__main__":
                     )
             asio_link_inputs.sort()
             asio_link_outputs.sort()
+            visible_hostapis = {"ASIO", "Windows WASAPI"}
+            if show_legacy:
+                visible_hostapis.update(
+                    {"MME", "Windows DirectSound", "DirectSound"}
+                )
             for index, device in enumerate(devices):
                 api_name = device["hostapi_name"]
-                if not show_legacy and api_name not in ("ASIO", "Windows WASAPI"):
+                if api_name not in visible_hostapis:
                     continue
                 self.device_names[index] = device["name"]
                 if api_name == "ASIO":
@@ -3214,13 +3480,13 @@ if __name__ == "__main__":
         ):
             """選択されたAPIを問わず入出力を設定する。"""
             output_index = self.output_device_map[output_device]
-            if self.file_source_active:
+            if self.file_source_active or self.application_source_active:
                 # A decoded file has no PortAudio input endpoint.  Binding
                 # the unused input side to the output endpoint prevents a
                 # stale/disabled microphone or ASIO driver from vetoing
                 # conversion startup.
                 input_index = output_index
-                input_api = "File"
+                input_api = "Application" if self.application_source_active else "File"
             else:
                 input_index = self.input_device_map[input_device]
                 input_api = self.device_hostapis[input_index]
@@ -3241,7 +3507,7 @@ if __name__ == "__main__":
             self.gui_config.sg_output_hostapi = output_api
             self.asio_input_selectors = (
                 []
-                if self.file_source_active
+                if self.file_source_active or self.application_source_active
                 else self.input_asio_selectors.get(input_device, [])
             )
             self.asio_output_selectors = self.output_asio_selectors.get(
@@ -3252,7 +3518,11 @@ if __name__ == "__main__":
                 if monitor_device == MONITOR_DISABLED
                 else self.output_device_map[monitor_device]
             )
-            if self.monitor_device_index == output_index:
+            if self.monitor_device_index == output_index and (
+                output_api != "ASIO"
+                or self.output_asio_selectors.get(monitor_device, [])
+                == self.asio_output_selectors
+            ):
                 printt(
                     "Monitor output is the same as the main output; "
                     "the duplicate stream was omitted."
@@ -3292,6 +3562,7 @@ if __name__ == "__main__":
                     and input_api == "ASIO"
                     and self.monitor_device_index == input_index
                 )
+                and not ((self.file_source_active or self.application_source_active) and output_api != "ASIO")
             ):
                 raise ValueError(
                     "ASIOモニターは、ASIO入力またはASIO出力と同じドライバーを選んでください。"
@@ -3393,7 +3664,7 @@ if __name__ == "__main__":
 
             candidates = []
             for rate in (
-                *( () if self.file_source_active else (input_info["default_samplerate"],) ),
+                *( () if self.file_source_active or self.application_source_active else (input_info["default_samplerate"],) ),
                 output_info["default_samplerate"],
                 48000,
                 44100,
@@ -3407,7 +3678,7 @@ if __name__ == "__main__":
             errors = []
             for rate in candidates:
                 try:
-                    if self.file_source_active:
+                    if self.file_source_active or self.application_source_active:
                         input_extra, input_fallback = None, False
                     else:
                         input_extra, input_fallback = check_endpoint(

@@ -1,59 +1,59 @@
 # RVC-Realtime-GUI
 
-[English](README.md) | [日本語](README_ja.md)
+[日本語](README.md) | [English](README_EN.md)
 
-> ## Latest high-performance real-time build
+## 更新内容（2026-10-12）
+
+アプリケーション入力を追加しました。入力ソースを切り替えると、入力デバイス欄でアプリを選択でき、更新ボタンで一覧を更新できます。一度認識したアプリは記憶され、停止・一時停止中も候補に残ります。アプリ再起動時は再接続を試みます。
+
+音声ファイル入力時も出力・モニター設定を維持するよう修正しました。WASAPI出力とASIOモニターの併用、および同じASIOドライバーの別チャンネルを区別して扱います。互換デバイス表示の見切れも修正しました。
+
+アプリケーション入力はWindowsのプロセス別音声取り込みを使用します。ASIO直接再生など通常のWindows再生経路を通らない音は対象外になる場合があります。原音は自動でミュートしません。実機での変換・聴取確認は継続中です。
+
+> ## 最新の高速リアルタイム推論ビルド
 >
-> **This project includes the real-time inference performance updates introduced
-> after 2026-07-18.** It combines the updated inference path, CUDA Graph
-> warm-up, and input/output noise-reduction fixes in a dedicated desktop client
-> for low-latency RVC voice conversion.
+> **本プロジェクトには、2026-07-18 以降に導入されたリアルタイム推論の高速化対応を取り込んでいます。**
+> 更新済みの推論経路、CUDA Graph のウォームアップ、入出力ノイズ低減の修正を、低遅延 RVC 音声変換向けの専用デスクトップクライアントとしてまとめています。
 
 <img width="1760" height="752" alt="RVC-Realtime-GUI screenshot" src="https://github.com/user-attachments/assets/d001d48b-9f00-4eeb-a90c-1474099e8454" />
 
-RVC-Realtime-GUI is a Windows desktop client for low-latency, real-time RVC
-(Retrieval-based Voice Conversion).
+RVC-Realtime-GUI は、低遅延のリアルタイム RVC（Retrieval-based Voice Conversion）を行う Windows デスクトップクライアントです。
 
-This repository contains the source for the **CUDA 12.8 standard build**.
-It is maintained as a focused derivative of
-[RVC-Project/Retrieval-based-Voice-Conversion-WebUI](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI).
+本リポジトリには **CUDA 12.8 標準ビルド**のソースコードを収録しています。
+[RVC-Project/Retrieval-based-Voice-Conversion-WebUI](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI) をベースに、リアルタイム推論に特化して改修しています。
 
-## Performance-focused updates
+## 高速化対応
 
-- **Updated real-time inference implementation** based on upstream changes
-  released after 2026-07-18
-- **CUDA Graph warm-up** to reduce steady-state GPU inference overhead
-- **Input/output noise-reduction fixes** from the updated real-time path
-- **CUDA 12.8 standard runtime**, including Blackwell-compatible environments
+- **更新済みリアルタイム推論実装**：2026-07-18 以降の本家更新を反映
+- **CUDA Graph ウォームアップ**：起動後の継続的な GPU 推論オーバーヘッドを削減
+- **入出力ノイズ低減の修正**：更新済みリアルタイム経路の不具合修正を反映
+- **CUDA 12.8 標準ランタイム**：Blackwell 互換環境を含む現行 NVIDIA GPU に対応
 
-## Download
+## ダウンロード
 
-**[Open the download page on Hugging Face](https://huggingface.co/niel-blue/RVC-Realtime-GUI)**
+ネイティブASIOはドライバーの推奨バッファサイズを保持して開始します。ASIO入力・モニターとWASAPI出力を併用できます。
 
-| Build | Status | Intended hardware |
+**[Hugging Face のダウンロードページを開く](https://huggingface.co/niel-blue/RVC-Realtime-GUI)**
+
+| ビルド | 状態 | 想定するハードウェア |
 | --- | --- | --- |
-| CUDA 12.8 | Current standard build | Current NVIDIA GPUs, including Blackwell-compatible environments |
-| CUDA 11.8 | Planned legacy build | Older NVIDIA GPUs that cannot use the CUDA 12.8 package |
+| CUDA 12.8 | 現行標準ビルド | Blackwell 互換環境を含む現行 NVIDIA GPU |
+| CUDA 11.8 | 公開済みの互換ビルド | CUDA 11.8 環境を使用する NVIDIA GPU |
 
-Each package is self-contained and includes its Python runtime, PyTorch/CUDA
-stack, FFmpeg, inference assets, and the release model set.
+各パッケージには Python ランタイム、PyTorch／CUDA スタック、FFmpeg、推論用アセット、リリース用モデルセットを同梱しています。Python、CUDA Toolkit、FFmpeg、RVC-WebUI を別途インストールする必要はありません。
 
-## Quick start
+## クイックスタート
 
-1. Download and extract the matching package from the
-   [Hugging Face download page](https://huggingface.co/niel-blue/RVC-Realtime-GUI).
-2. Extract it to a short local path, such as `C:\RVC-Realtime-GUI`.
-   Do not run it from inside the archive.
-3. Start `RVC-Realtime-GUI-CUDA128.bat` for the CUDA 12.8 package.
-4. Select a model and audio devices, then press **Start**.
+1. [Hugging Face のダウンロードページ](https://huggingface.co/niel-blue/RVC-Realtime-GUI)から、使用する GPU に合ったパッケージをダウンロードして展開します。
+2. `C:\RVC-Realtime-GUI` など短いローカルパスへ展開してください。アーカイブ内から直接起動しないでください。
+3. CUDA 12.8 パッケージでは `RVC-Realtime-GUI-CUDA128.bat` を起動します。
+4. モデルとオーディオデバイスを選択し、**スタート**を押します。
 
-> **First launch may take longer than usual** while the bundled inference assets
-> and GPU runtime are initialized. Please wait for the application window to
-> finish opening before assuming it has stopped responding.
+> **初回起動時は通常より時間がかかる場合があります。** 同梱の推論アセットと GPU ランタイムを初期化するためです。アプリケーションウィンドウが開き終わるまで、しばらくお待ちください。
 
-## Adding models
+## モデルの追加
 
-Create one folder per model inside `models` in the extracted release package:
+展開した配布パッケージの `models` 内に、モデルごとのフォルダを作成します。
 
 ```text
 models/
@@ -63,61 +63,62 @@ models/
     preview.png
 ```
 
-- The **folder name** is displayed as the model name.
-- Place the model `.pth` and its `added_*.index` file in the same folder.
-- An optional `.png`, `.jpg`, or `.jpeg` image is shown automatically as the
-  model preview.
-- Restart the app or use **Reload** after adding or replacing a model.
+- **フォルダ名**がアプリ上のモデル名として表示されます。
+- モデル `.pth` と対応する `added_*.index` を同じフォルダに入れてください。
+- 任意の `.png`、`.jpg`、`.jpeg` 画像を入れると、モデルのプレビューとして自動表示します。
+- モデルを追加・差し替えた後は、アプリを再起動するか **再読み込み**を実行してください。
 
-## Highlights
+## 主な機能
 
-- Dedicated CustomTkinter desktop interface with Japanese and English UI
-- CUDA 12.8 standard build, including current NVIDIA GPU support
-- Real-time RVC inference with CUDA Graph warm-up
-- WASAPI and native ASIO audio-device routing
-- Independent input, output, and monitor device selection
-- Model gallery and model-specific general settings
-- WAV recording: separate input/output, mix, or split L/R recording
-- Audio-file input through bundled FFmpeg in the packaged release
-- Runtime-log display and log-file export
+- 日本語・英語対応の CustomTkinter 専用デスクトップ UI
+- CUDA 12.8 標準ビルドと現行 NVIDIA GPU 対応
+- CUDA Graph ウォームアップを備えたリアルタイム RVC 推論
+- WASAPI およびネイティブ ASIO のオーディオデバイスルーティング
+- 入力・出力・モニター用デバイスの個別選択
+- モデルギャラリーとモデルごとの一般設定保存
+- WAV 録音：入力／出力の別ファイル、ミックス、L/R 分離録音
+- 同梱 FFmpeg を使った音声ファイル入力
+- ランタイムログの表示・ファイル保存
 
-## Source layout
+## ソース構成
 
-| Path | Purpose |
+## 同梱モデル「Sakura」
+
+<img width="150" height="150" alt="Sakura" src="https://github.com/user-attachments/assets/1537272e-eb9f-466c-8dae-9e8898cfccad" />
+
+普通の自然な声をコンセプトとしたモデル「Sakura」を同梱します。最新版RVCで約100epoch学習し、商用利用は自由です。
+
+| パス | 用途 |
 | --- | --- |
-| `app/` | Application entry point and GUI |
-| `infer/` | RVC real-time inference, HuBERT, RMVPE, and FCPE code |
-| `tools/` | GUI adapter, audio routing, recording, file input, and helpers |
-| `configs/config.py` | CUDA device and precision selection |
-| `models/README.md` | Model folder layout used by the packaged application |
-| `tests/` | Source-level regression tests |
+| `app/` | アプリケーションの起動処理と GUI |
+| `infer/` | RVC リアルタイム推論、HuBERT、RMVPE、FCPE コード |
+| `tools/` | GUI アダプタ、オーディオルーティング、録音、ファイル入力、補助機能 |
+| `configs/config.py` | CUDA デバイスと精度設定 |
+| `models/README.md` | 配布アプリが使用するモデルフォルダ構成 |
+| `tests/` | ソースレベルの回帰テスト |
 
-## Not stored in Git
+## Git に含めないもの
 
-The Git repository intentionally excludes all user-specific and large binary
-files:
+Git リポジトリには、ユーザー固有の設定や大容量バイナリを意図的に含めていません。
 
-- Bundled Python runtime, PyTorch, CUDA libraries, and package cache
-- RVC `.pth` models and FAISS `.index` files
-- HuBERT and RMVPE weight files
-- FFmpeg binaries
-- Audio recordings, logs, window position, and local device settings
+- 同梱 Python ランタイム、PyTorch、CUDA ライブラリ、パッケージキャッシュ
+- RVC の `.pth` モデルおよび FAISS `.index` ファイル
+- HuBERT、RMVPE の重みファイル
+- FFmpeg バイナリ
+- 録音データ、ログ、ウィンドウ位置、ローカルデバイス設定
 
-These files belong to the Hugging Face release package, not the source history.
+これらはソース履歴ではなく、Hugging Face の配布パッケージに含めるものです。
 
-## Development
+## 開発
 
-This source tree is intended for development of the packaged CUDA 12.8 build.
-Use the release package as the reference runtime, then run:
+このソースツリーは、配布版 CUDA 12.8 ビルドの開発用です。配布パッケージを基準ランタイムとして使用し、次の起動ファイルを実行します。
 
 ```bat
 RVC-Realtime-GUI-CUDA128.bat
 ```
 
-The package must contain `runtime/`, `assets/`, `tools/ffmpeg/`, and at least
-one model folder under `models/`.
+パッケージには `runtime/`、`assets/`、`tools/ffmpeg/`、および `models/` 以下に少なくとも1つのモデルフォルダが必要です。
 
-## Upstream and license
+## 本家・ライセンス
 
-This project is based on RVC-WebUI by RVC-Project. See [NOTICE.md](NOTICE.md)
-and [LICENSE](LICENSE) for attribution and license information.
+本プロジェクトは RVC-Project による RVC-WebUI をベースにしています。帰属とライセンスについては [NOTICE.md](NOTICE.md)、[LICENSE](LICENSE)、および[ソースリポジトリ](https://github.com/niel-blue/RVC-Realtime-GUI)を参照してください。

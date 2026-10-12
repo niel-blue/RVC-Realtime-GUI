@@ -22,3 +22,7 @@ __pycache__/
 .vscode/
 .idea/
 *.log
+*.obj
+*.exp
+*.lib
+tools/application_capture/*.dll

@@ -1,0 +1,139 @@
+# RVC-Realtime-GUI
+
+[日本語](README.md) | [English](README_EN.md)
+
+## Changes (2026-10-12)
+
+Added application input. Selecting this input source replaces the input-device selector with an application selector and Refresh button. Previously detected applications are remembered and remain selectable while stopped or paused. Capture attempts to reconnect when the application restarts.
+
+Fixed output/monitor routing for audio-file input, including WASAPI output with ASIO monitoring and separate channel pairs on the same ASIO driver. Fixed clipping of the compatibility-device checkbox label.
+
+Application input uses Windows per-process audio capture. Audio played directly through ASIO or outside the normal Windows playback path may not be captured. Original playback is not automatically muted. Hardware conversion and listening checks are still in progress.
+
+> ## Latest high-performance real-time build
+>
+> **This project includes the real-time inference performance updates introduced
+> after 2026-07-18.** It combines the updated inference path, CUDA Graph
+> warm-up, and input/output noise-reduction fixes in a dedicated desktop client
+> for low-latency RVC voice conversion.
+
+<img width="1760" height="752" alt="RVC-Realtime-GUI screenshot" src="https://github.com/user-attachments/assets/d001d48b-9f00-4eeb-a90c-1474099e8454" />
+
+RVC-Realtime-GUI is a Windows desktop client for low-latency, real-time RVC
+(Retrieval-based Voice Conversion).
+
+This repository contains the source for the **CUDA 12.8 standard build**.
+It is maintained as a focused derivative of
+[RVC-Project/Retrieval-based-Voice-Conversion-WebUI](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI).
+
+## Performance-focused updates
+
+- **Updated real-time inference implementation** based on upstream changes
+  released after 2026-07-18
+- **CUDA Graph warm-up** to reduce steady-state GPU inference overhead
+- **Input/output noise-reduction fixes** from the updated real-time path
+- **CUDA 12.8 standard runtime**, including Blackwell-compatible environments
+
+## Download
+
+Native ASIO starts with the driver's preferred buffer size. ASIO input and monitoring can be combined with WASAPI output.
+
+**[Open the download page on Hugging Face](https://huggingface.co/niel-blue/RVC-Realtime-GUI)**
+
+| Build | Status | Intended hardware |
+| --- | --- | --- |
+| CUDA 12.8 | Current standard build | Current NVIDIA GPUs, including Blackwell-compatible environments |
+| CUDA 11.8 | Available compatibility build | NVIDIA GPUs using the CUDA 11.8 environment |
+
+Each package is self-contained and includes its Python runtime, PyTorch/CUDA
+stack, FFmpeg, inference assets, and the release model set.
+
+## Quick start
+
+1. Download and extract the matching package from the
+   [Hugging Face download page](https://huggingface.co/niel-blue/RVC-Realtime-GUI).
+2. Extract it to a short local path, such as `C:\RVC-Realtime-GUI`.
+   Do not run it from inside the archive.
+3. Start `RVC-Realtime-GUI-CUDA128.bat` for the CUDA 12.8 package.
+4. Select a model and audio devices, then press **Start**.
+
+> **First launch may take longer than usual** while the bundled inference assets
+> and GPU runtime are initialized. Please wait for the application window to
+> finish opening before assuming it has stopped responding.
+
+## Adding models
+
+Create one folder per model inside `models` in the extracted release package:
+
+```text
+models/
+  MyVoice/
+    MyVoice.pth
+    added_MyVoice.index
+    preview.png
+```
+
+- The **folder name** is displayed as the model name.
+- Place the model `.pth` and its `added_*.index` file in the same folder.
+- An optional `.png`, `.jpg`, or `.jpeg` image is shown automatically as the
+  model preview.
+- Restart the app or use **Reload** after adding or replacing a model.
+
+## Highlights
+
+- Dedicated CustomTkinter desktop interface with Japanese and English UI
+- CUDA 12.8 standard build, including current NVIDIA GPU support
+- Real-time RVC inference with CUDA Graph warm-up
+- WASAPI and native ASIO audio-device routing
+- Independent input, output, and monitor device selection
+- Model gallery and model-specific general settings
+- WAV recording: separate input/output, mix, or split L/R recording
+- Audio-file input through bundled FFmpeg in the packaged release
+- Runtime-log display and log-file export
+
+## Source layout
+
+## Included model: Sakura
+
+<img width="150" height="150" alt="Sakura" src="https://github.com/user-attachments/assets/1537272e-eb9f-466c-8dae-9e8898cfccad" />
+
+Sakura is included as a natural, everyday voice model, trained for approximately 100 epochs with the updated RVC. Commercial use is permitted.
+
+| Path | Purpose |
+| --- | --- |
+| `app/` | Application entry point and GUI |
+| `infer/` | RVC real-time inference, HuBERT, RMVPE, and FCPE code |
+| `tools/` | GUI adapter, audio routing, recording, file input, and helpers |
+| `configs/config.py` | CUDA device and precision selection |
+| `models/README.md` | Model folder layout used by the packaged application |
+| `tests/` | Source-level regression tests |
+
+## Not stored in Git
+
+The Git repository intentionally excludes all user-specific and large binary
+files:
+
+- Bundled Python runtime, PyTorch, CUDA libraries, and package cache
+- RVC `.pth` models and FAISS `.index` files
+- HuBERT and RMVPE weight files
+- FFmpeg binaries
+- Audio recordings, logs, window position, and local device settings
+
+These files belong to the Hugging Face release package, not the source history.
+
+## Development
+
+This source tree is intended for development of the packaged CUDA 12.8 build.
+Use the release package as the reference runtime, then run:
+
+```bat
+RVC-Realtime-GUI-CUDA128.bat
+```
+
+The package must contain `runtime/`, `assets/`, `tools/ffmpeg/`, and at least
+one model folder under `models/`.
+
+## Upstream and license
+
+This project is based on RVC-WebUI by RVC-Project. See [NOTICE.md](NOTICE.md)
+and [LICENSE](LICENSE) for attribution and license information.

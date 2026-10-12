@@ -1,6 +1,14 @@
 # RVC-Realtime-GUI
 
-[English](README.md) | [日本語](README_ja.md)
+[日本語](README.md) | [English](README_EN.md)
+
+## 更新内容（2026-10-12）
+
+アプリケーション入力を追加しました。入力ソースを切り替えると、入力デバイス欄でアプリを選択でき、更新ボタンで一覧を更新できます。一度認識したアプリは記憶され、停止・一時停止中も候補に残ります。アプリ再起動時は再接続を試みます。
+
+音声ファイル入力時も出力・モニター設定を維持するよう修正しました。WASAPI出力とASIOモニターの併用、および同じASIOドライバーの別チャンネルを区別して扱います。互換デバイス表示の見切れも修正しました。
+
+アプリケーション入力はWindowsのプロセス別音声取り込みを使用します。ASIO直接再生など通常のWindows再生経路を通らない音は対象外になる場合があります。原音は自動でミュートしません。実機での変換・聴取確認は継続中です。
 
 > ## 最新の高速リアルタイム推論ビルド
 >
@@ -23,12 +31,14 @@ RVC-Realtime-GUI は、低遅延のリアルタイム RVC（Retrieval-based Voic
 
 ## ダウンロード
 
+ネイティブASIOはドライバーの推奨バッファサイズを保持して開始します。ASIO入力・モニターとWASAPI出力を併用できます。
+
 **[Hugging Face のダウンロードページを開く](https://huggingface.co/niel-blue/RVC-Realtime-GUI)**
 
 | ビルド | 状態 | 想定するハードウェア |
 | --- | --- | --- |
 | CUDA 12.8 | 現行標準ビルド | Blackwell 互換環境を含む現行 NVIDIA GPU |
-| CUDA 11.8 | 準備中のレガシービルド | CUDA 12.8 パッケージを使用できない旧世代 NVIDIA GPU |
+| CUDA 11.8 | 公開済みの互換ビルド | CUDA 11.8 環境を使用する NVIDIA GPU |
 
 各パッケージには Python ランタイム、PyTorch／CUDA スタック、FFmpeg、推論用アセット、リリース用モデルセットを同梱しています。Python、CUDA Toolkit、FFmpeg、RVC-WebUI を別途インストールする必要はありません。
 
@@ -71,6 +81,12 @@ models/
 - ランタイムログの表示・ファイル保存
 
 ## ソース構成
+
+## 同梱モデル「Sakura」
+
+<img width="150" height="150" alt="Sakura" src="https://github.com/user-attachments/assets/1537272e-eb9f-466c-8dae-9e8898cfccad" />
+
+普通の自然な声をコンセプトとしたモデル「Sakura」を同梱します。最新版RVCで約100epoch学習し、商用利用は自由です。
 
 | パス | 用途 |
 | --- | --- |
